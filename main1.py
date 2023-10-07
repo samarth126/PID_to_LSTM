@@ -25,6 +25,7 @@ from keras.models import load_model
 
 # For TCLab
 import tclab
+from matplotlib.animation import FuncAnimation
 
 speedup = 100
 TCLab = tclab.setup(connected=False, speedup = speedup)
@@ -109,8 +110,35 @@ plt.plot(Tsp)
 plt.show()
 
 
-# range
 
+
+
+
+
+
+
+
+# Create a figure and axes for the real-time plot
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.set_ylim((0, 100))
+ax.set_xlabel('Time (s)', size=14)
+ax.tick_params(axis='both', which='both', labelsize=12)
+
+# Initialize data arrays for real-time plot
+i_values = []
+Tsp_values = []
+T1_values = []
+Qlstm_values = []
+
+# Create empty lines for the plot
+line_sp, = ax.plot([], 'k-', label='SP $(^oC)$')
+line_t1, = ax.plot([], 'r-', label='$T_1$ $(^oC)$')
+line_lstm, = ax.plot([], 'g-', label='$Q_{LSTM}$ (%)')
+ax.legend(loc='upper right', fontsize=14)
+
+# Initialize the plot
+plt.ion()  # Turn on interactive mode
+plt.show()
 
 # Run test
 with TCLab() as lab:
@@ -120,7 +148,8 @@ with TCLab() as lab:
 
     start_time = 0
     prev_time = 0
-    for i,t in enumerate(tclab.clock(loops)):
+
+    for i, t in enumerate(tclab.clock(loops)):
         tm[i] = t
         dt = t - prev_time
 
@@ -130,64 +159,31 @@ with TCLab() as lab:
         # Run LSTM model to get Q1 value for control
         if i >= window:
             # Load data for model
-            T1_m = T1[i-window:i]
-            Tsp_m = Tsp[i-window:i]
+            T1_m = T1[i - window:i]
+            Tsp_m = Tsp[i - window:i]
             # Predict and store LSTM value for comparison
-            Qlstm[i] = lstm(T1_m,Tsp_m)
+            Qlstm[i] = lstm(T1_m, Tsp_m)
 
         # Write heater output (0-100)
         lab.Q1(Qlstm[i])
 
+        # Update plot data
+        i_values.append(i)
+        Tsp_values.append(Tsp[i])
+        T1_values.append(T1[i])
+        Qlstm_values.append(Qlstm[i])
+
+        # Update plot lines
+        line_sp.set_data(i_values, Tsp_values)
+        line_t1.set_data(i_values, T1_values)
+        line_lstm.set_data(i_values, Qlstm_values)
+
+        ax.relim()
+        ax.autoscale_view()
+        fig.canvas.flush_events()  # Update the plot
+
         prev_time = t
 
-plt.figure(figsize=(10,4))
-plt.plot(Tsp[:i],'k-',label='SP $(^oC)$')
-plt.plot(T1[:i],'r-',label='$T_1$ $(^oC)$')
-plt.plot(Qlstm[:i],'g-',label='$Q_{LSTM}$ (%)')
-plt.legend(fontsize=14)
-plt.ylim((0,100))
-plt.xlabel('Time (s)',size=14)
-plt.xticks(size=12)
-plt.yticks(size=12)
-plt.grid()
+# Turn off interactive mode after the loop
+plt.ioff()
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# we collected data with help off PID
-

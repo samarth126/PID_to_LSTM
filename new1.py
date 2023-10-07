@@ -80,7 +80,7 @@ def lstm(T1_m, Tsp_m):
 
 
 # Run time in minutes
-run_time = 60.0
+run_time = 14.0
 
 # Number of cycles
 loops = int(60.0*run_time)
@@ -96,12 +96,10 @@ with TCLab() as lab:
     Tsp = np.ones(loops) * lab.T1
 
 # vary temperature setpoint
-end = window + 15 # leave 1st window + 15 seconds of temp set point as room temp
-while end <= loops:
-    start = end
-    # keep new temp set point value for anywhere from 4 to 10 min
-    end += random.randint(240,600)
-    Tsp[start:end] = random.randint(30,70)
+end = 100
+start = 15
+
+Tsp[start:end] = 34
 
 # leave last 120 seconds as room temp
 Tsp[-120:] = Tsp[0]
@@ -109,18 +107,27 @@ plt.plot(Tsp)
 plt.show()
 
 
-# range
 
+j=0
 
 # Run test
 with TCLab() as lab:
     # Find current T1, T2
     print('Temperature 1: {0:0.2f} °C'.format(lab.T1))
     print('Temperature 2: {0:0.2f} °C'.format(lab.T2))
-
+    
     start_time = 0
     prev_time = 0
     for i,t in enumerate(tclab.clock(loops)):
+        if j == 0:
+            set_point = int(input("input wait.."))
+            Tsp[i:i+500] = set_point
+            j = 500
+            print(i,j)
+            plt.plot(Tsp)
+            plt.show()
+        else:
+            j = j-1
         tm[i] = t
         dt = t - prev_time
 
@@ -155,39 +162,4 @@ plt.show()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# we collected data with help off PID
 
