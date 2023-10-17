@@ -28,6 +28,7 @@ import tclab
 from matplotlib.animation import FuncAnimation
 
 import tkinter as tk
+from tkinter import Label, Button, Entry
 
 speedup = 100
 TCLab = tclab.setup(connected=False, speedup = speedup)
@@ -60,6 +61,9 @@ def lstm(T1_m, Tsp_m):
     # Calculate error (necessary feature for LSTM input)
     err = Tsp_m - T1_m
 
+
+
+
     # Format data for LSTM input
     X = np.vstack((Tsp_m,err)).T
     Xs = s_x.transform(X)
@@ -72,7 +76,6 @@ def lstm(T1_m, Tsp_m):
     # Ensure Q1c is between 0 and 100
     Q1c = np.clip(Q1c,0.0,100.0)
     return Q1c
-
 
 
 
@@ -115,6 +118,29 @@ plt.show()
 
 
 
+
+# Function to update Tsp values
+def update_Tsp():
+    global Tsp
+    end = window + 15
+    start = end
+    end += 1000
+    set_point = sp.get()
+    Tsp[start:end] = int(set_point)
+    print("Set Point:", set_point)
+
+# Create a Tkinter window
+root = tk.Tk()
+root.title("Temperature Setpoint (Tsp)")
+
+label = tk.Label(root, text="Set Point:")
+label.grid(row=2, column=0)
+sp = tk.Entry(root)
+sp.grid(row=2, column=1)
+
+# Create a button to update Tsp values
+update_button = Button(root, text="Update Tsp", command=update_Tsp)
+update_button.grid(row=3, column=0, columnspan=2)
 
 
 
