@@ -116,8 +116,20 @@ plt.show()
 
 
 
+manual_flag = False
+manual_val= 70
+
+def mann_update():
+    global manual_flag
+    global manual_val
+    manual_flag = True
+    manual_heating = manual_heat.get()
+    manual_val = int(manual_heating)
 
 
+def lstm_auto():
+    global manual_flag
+    manual_flag = False
 
 # Function to update Tsp values
 def update_Tsp():
@@ -136,11 +148,26 @@ root.title("Temperature Setpoint (Tsp)")
 label = tk.Label(root, text="Set Point:")
 label.grid(row=2, column=0)
 sp = tk.Entry(root)
-sp.grid(row=2, column=1)
+sp.grid(row=2, column=2)
+
 
 # Create a button to update Tsp values
-update_button = Button(root, text="Update Tsp", command=update_Tsp)
+update_button = tk.Button(root, text="Update Tsp", command=update_Tsp)
 update_button.grid(row=3, column=0, columnspan=2)
+
+# Label and Entry for Manual Value
+manual_label = tk.Label(root, text="Manual Value:")
+manual_label.grid(row=4, column=0)
+manual_heat = tk.Entry(root)
+manual_heat.grid(row=4, column=2)
+
+manual = tk.Button(root, text="Manual Override", command=mann_update)
+auto = tk.Button(root, text="LSTM auto", command=lstm_auto)
+
+manual.grid(row=5, column=0, columnspan=2)
+auto.grid(row=5, column=1, columnspan=2)
+
+
 
 
 
@@ -191,13 +218,20 @@ with TCLab() as lab:
             Qlstm[i] = lstm(T1_m, Tsp_m)
 
         # Write heater output (0-100)
-        lab.Q1(Qlstm[i])
+        print(manual_flag)
+
+        if manual_flag == True:
+            lab.Q1(manual_val)
+            Qlstm_values.append(manual_val)
+        else:
+            lab.Q1(Qlstm[i])
+            Qlstm_values.append(Qlstm[i])
 
         # Update plot data
         i_values.append(i)
         Tsp_values.append(Tsp[i])
         T1_values.append(T1[i])
-        Qlstm_values.append(Qlstm[i])
+        
 
         # Update plot lines
         line_sp.set_data(i_values, Tsp_values)

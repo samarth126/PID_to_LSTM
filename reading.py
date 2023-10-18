@@ -13,9 +13,11 @@ while True:
         last_sheet_name = xls.sheet_names[-1]
 
         # Read the second column (column index 1, as it's 0-based) of the last sheet
-        df = pd.read_excel(excel_file_path, sheet_name=last_sheet_name, usecols=[1])
+        df = pd.read_excel(excel_file_path, sheet_name=last_sheet_name, usecols=[2])
 
-        # Get the last row value from the second column
+        # Get the last row value from the second column 
+
+        
         last_row_index = len(df) - 1
         last_row_value = df.iloc[last_row_index, 0]  # 0 for the second column
 
