@@ -103,12 +103,8 @@ with TCLab() as lab:
 
 # vary temperature setpoint
 end = window + 15 # leave 1st window + 15 seconds of temp set point as room temp
-while end <= loops:
-    start = end
-    # keep new temp set point value for anywhere from 4 to 10 min
-    end += random.randint(240,600)
-    Tsp[start:end] = random.randint(30,70)
 
+Tsp[end:] = 40
 # leave last 120 seconds as room temp
 Tsp[-120:] = Tsp[0]
 plt.plot(Tsp)
@@ -116,8 +112,13 @@ plt.show()
 
 
 
-manual_flag = False
-manual_val= 70
+manual_flag = True
+manual_val= 10
+sp_g = 40
+
+crr_LSTM_Q = 0
+crr_tem = 0
+crr_tsp = 0
 
 def mann_update():
     global manual_flag
@@ -125,20 +126,27 @@ def mann_update():
     manual_flag = True
     manual_heating = manual_heat.get()
     manual_val = int(manual_heating)
+    manual.configure(bg="green")
+    auto.configure(bg="red")
 
 
 def lstm_auto():
     global manual_flag
     manual_flag = False
+    manual.configure(bg="red")
+    auto.configure(bg="green")
+    
 
 # Function to update Tsp values
 def update_Tsp():
     global Tsp
+    global sp_g
     end = window + 15
     start = end
     end += 1000
     set_point = sp.get()
-    Tsp[start:end] = int(set_point)
+    sp_g = int(set_point)
+    Tsp[start:] = sp_g
     print("Set Point:", set_point)
 
 # Create a Tkinter window
@@ -150,6 +158,7 @@ label.grid(row=2, column=0)
 sp = tk.Entry(root)
 sp.grid(row=2, column=2)
 
+sp.insert(0, sp_g)
 
 # Create a button to update Tsp values
 update_button = tk.Button(root, text="Update Tsp", command=update_Tsp)
@@ -161,15 +170,29 @@ manual_label.grid(row=4, column=0)
 manual_heat = tk.Entry(root)
 manual_heat.grid(row=4, column=2)
 
+manual_heat.insert(0, manual_val)
+
 manual = tk.Button(root, text="Manual Override", command=mann_update)
 auto = tk.Button(root, text="LSTM auto", command=lstm_auto)
+
+manual.configure(bg="green")
+auto.configure(bg="red")
 
 manual.grid(row=5, column=0, columnspan=2)
 auto.grid(row=5, column=1, columnspan=2)
 
+# Create an Entry widget for 'y'
+crr_lstm_label = tk.Label(root, text=f"y = {crr_LSTM_Q}")
+crr_lstm_label.grid(row=7, column=0)
 
+crr_man_label = tk.Label(root, text=f"y = {manual_val}")
+crr_man_label.grid(row=8, column=0)
 
+crr_tem_label = tk.Label(root, text=f"y = {crr_tem}")
+crr_tem_label.grid(row=9, column=0)
 
+crr_tsp_label = tk.Label(root, text=f"y = {crr_tsp}")
+crr_tsp_label.grid(row=10, column=0)
 
 # Create a figure and axes for the real-time plot
 fig, ax = plt.subplots(figsize=(10, 4))
@@ -217,8 +240,19 @@ with TCLab() as lab:
             # Predict and store LSTM value for comparison
             Qlstm[i] = lstm(T1_m, Tsp_m)
 
+        crr_LSTM_Q = round(Qlstm[i], 2)
+        crr_tem = round(T1[i], 2)
+        crr_tsp = round(Tsp[i], 2)
+
         # Write heater output (0-100)
         print(manual_flag)
+
+        #setting changing values in GUI
+        crr_lstm_label.config(text=f"Current LSTM Q= {crr_LSTM_Q}") 
+        crr_man_label.config(text=f"Current Manual Q= {manual_val}") 
+        crr_tem_label.config(text=f"Current PV= {crr_tem}") 
+        crr_tsp_label.config(text=f"Current Tsp= {crr_tsp}") 
+
 
         if manual_flag == True:
             lab.Q1(manual_val)
