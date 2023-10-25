@@ -30,7 +30,7 @@ from matplotlib.animation import FuncAnimation
 import tkinter as tk
 from tkinter import Label, Button, Entry
 
-speedup = 100
+speedup = 10000
 TCLab = tclab.setup(connected=False, speedup = speedup)
 
 
@@ -81,12 +81,29 @@ def lstm(T1_m, Tsp_m):
 
 
 
+# Define a function to save data to a CSV file
+def save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values):
+    data = {
+        'i_values': i_values,
+        'Tsp_values': Tsp_values,
+        'T1_values': T1_values,
+        'Qlstm_values': Qlstm_values
+    }
+
+    df = pd.DataFrame(data)
+    csv_file = f"output_{i // 360}.csv"
+    df.to_csv(csv_file, index=False)
+    print(f"Data has been saved to {csv_file}")
+
+
+
+
 
 
 
 
 # Run time in minutes
-run_time = 60.0
+run_time = 1440.0
 
 # Number of cycles
 loops = int(60.0*run_time)
@@ -110,7 +127,7 @@ Tsp[-120:] = Tsp[0]
 plt.plot(Tsp)
 plt.show()
 
-
+itrator= 0
 
 manual_flag = True
 manual_val= 10
@@ -139,14 +156,14 @@ def lstm_auto():
 
 # Function to update Tsp values
 def update_Tsp():
+    global itrator
     global Tsp
     global sp_g
     end = window + 15
     start = end
-    end += 1000
     set_point = sp.get()
     sp_g = int(set_point)
-    Tsp[start:] = sp_g
+    Tsp[itrator+1:] = sp_g
     print("Set Point:", set_point)
 
 # Create a Tkinter window
@@ -226,6 +243,7 @@ with TCLab() as lab:
     prev_time = 0
 
     for i, t in enumerate(tclab.clock(loops)):
+        itrator= i
         tm[i] = t
         dt = t - prev_time
 
@@ -278,6 +296,38 @@ with TCLab() as lab:
 
         prev_time = t
 
+        if i % 3600 == 0 and i != 0:
+            # Save data every 3600 loops
+            save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values)
+
+            # Clear the lists to free up memory
+            i_values.clear()
+            Tsp_values.clear()
+            T1_values.clear()
+            Qlstm_values.clear()
+
+
 # Turn off interactive mode after the loop
 plt.ioff()
 plt.show()
+
+
+# data = {
+#     'i_values': i_values,
+#     'Tsp_values': Tsp_values,
+#     'T1_values': T1_values,
+#     'Qlstm_values': Qlstm_values
+# }
+
+# df = pd.DataFrame(data)
+
+# # Define the CSV file name
+# csv_file = "output.csv"
+
+# # Save the DataFrame to a CSV file
+# df.to_csv(csv_file, index=False)
+
+# print(f"Data has been saved to {csv_file}")
+
+
+
