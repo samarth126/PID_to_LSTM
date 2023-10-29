@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import random
 import time
 from tqdm import tqdm # Progress bar
-
+import gc
 # for scaling
 
 # For scaling, feature selection
@@ -107,6 +107,8 @@ def save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values):
     
     # Clear the DataFrame to release memory
     df = None
+    gc.collect()
+    return
 
 
 
@@ -308,7 +310,7 @@ with TCLab() as lab:
 
         prev_time = t
 
-        if i % 200 == 0 and i != 0:
+        if i % 3600 == 0 and i != 0:
             # Save data every 3600 loops
             save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values)
 
