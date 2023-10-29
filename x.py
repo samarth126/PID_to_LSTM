@@ -6,15 +6,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 import time
-from tqdm import tqdm # Progress bar
-
-# for scaling
+from tqdm import tqdm  # Progress bar
 
 # For scaling, feature selection
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_selection import SelectKBest, f_regression
-from sklearn.model_selection import train_test_split 
-
+from sklearn.model_selection import train_test_split
 
 # For LSTM model
 from keras.models import Sequential
@@ -31,18 +28,15 @@ import tkinter as tk
 from tkinter import Label, Button, Entry
 
 speedup = 10000
-TCLab = tclab.setup(connected=False, speedup = speedup)
-
+TCLab = tclab.setup(connected=False, speedup=speedup)
 
 new_model = tf.keras.models.load_model('lstm_control.h5')
-
 new_df = pd.read_csv('PID_train_data.csv')
-
 
 print(new_df)
 
 # Scale data
-X = new_df[['Tsp1','err']].values
+X = new_df[['Tsp1', 'err']].values
 y = new_df[['Q1']].values
 s_x = MinMaxScaler()
 Xs = s_x.fit_transform(X)
@@ -51,35 +45,26 @@ s_y = MinMaxScaler()
 ys = s_y.fit_transform(y)
 window = 15
 
-
 # Show the model architecture
 # print(new_model.summary())
-
 
 # LSTM controller code
 def lstm(T1_m, Tsp_m):
     # Calculate error (necessary feature for LSTM input)
     err = Tsp_m - T1_m
 
-
-
-
     # Format data for LSTM input
-    X = np.vstack((Tsp_m,err)).T
+    X = np.vstack((Tsp_m, err)).T
     Xs = s_x.transform(X)
     Xs = np.reshape(Xs, (1, Xs.shape[0], Xs.shape[1]))
 
-    # Predict Q for controller and unscale
+    # Predict Q for the controller and unscale
     Q1c_s = new_model.predict(Xs)
     Q1c = s_y.inverse_transform(Q1c_s)[0][0]
 
     # Ensure Q1c is between 0 and 100
-    Q1c = np.clip(Q1c,0.0,100.0)
+    Q1c = np.clip(Q1c, 0.0, 100.0)
     return Q1c
-
-
-
-
 
 # Define a function to save data to a CSV file
 def save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values):
@@ -90,59 +75,37 @@ def save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values):
         'Qlstm_values': Qlstm_values
     }
 
-    csv_file = "output.csv"
-
-    # If the file doesn't exist, create it and write the header
-    if not os.path.exists(csv_file):
-        df = pd.DataFrame(data)
-        df.to_csv(csv_file, index=False)
-        print(f"Data has been saved to {csv_file}")
-    else:
-        # If the file exists, append data to it
-        df = pd.read_csv(csv_file)
-        new_data = pd.DataFrame(data)
-        df = pd.concat([df, new_data], ignore_index=True)
-        df.to_csv(csv_file, index=False, mode='w')
-        print(f"Data has been appended to {csv_file}")
-    
-    # Clear the DataFrame to release memory
-    df = None
-
-
-
-
-
-
+    df = pd.DataFrame(data)
+    csv_file = f"output_{i // 360}.csv"
+    df.to_csv(csv_file, index=False)
+    print(f"Data has been saved to {csv_file}")
 
 # Run time in minutes
 run_time = 1440.0
 
 # Number of cycles
-loops = int(60.0*run_time)
+loops = int(60.0 * run_time)
 
 # arrays for storing data
-T1 = np.zeros(loops) # measured T (degC)
-Qpid = np.zeros(loops) # Heater values for PID controller
-Qlstm = np.zeros(loops) # Heater values for LSTM controller
-tm = np.zeros(loops) # Time
+T1 = np.zeros(loops)  # measured T (degC)
+Qpid = np.zeros(loops)  # Heater values for PID controller
+Qlstm = np.zeros(loops)  # Heater values for LSTM controller
+tm = np.zeros(loops)  # Time
 
 # Temperature set point (degC)
 with TCLab() as lab:
     Tsp = np.ones(loops) * lab.T1
 
 # vary temperature setpoint
-end = window + 15 # leave 1st window + 15 seconds of temp set point as room temp
-
+end = window + 15  # leave 1st window + 15 seconds of temp set point as room temp
 Tsp[end:] = 40
-# leave last 120 seconds as room temp
+# leave the last 120 seconds as room temp
 Tsp[-120:] = Tsp[0]
 plt.plot(Tsp)
 plt.show()
 
-itrator= 0
-
 manual_flag = True
-manual_val= 10
+manual_val = 10
 sp_g = 40
 
 crr_LSTM_Q = 0
@@ -158,24 +121,18 @@ def mann_update():
     manual.configure(bg="green")
     auto.configure(bg="red")
 
-
 def lstm_auto():
     global manual_flag
     manual_flag = False
     manual.configure(bg="red")
     auto.configure(bg="green")
-    
 
 # Function to update Tsp values
 def update_Tsp():
-    global itrator
     global Tsp
-    global sp_g
-    end = window + 15
-    start = end
     set_point = sp.get()
     sp_g = int(set_point)
-    Tsp[itrator+1:] = sp_g
+    Tsp[:] = sp_g
     print("Set Point:", set_point)
 
 # Create a Tkinter window
@@ -229,7 +186,7 @@ ax.set_ylim((0, 100))
 ax.set_xlabel('Time (s)', size=14)
 ax.tick_params(axis='both', which='both', labelsize=12)
 
-# Initialize data arrays for real-time plot
+# Initialize data arrays for the real-time plot
 i_values = []
 Tsp_values = []
 T1_values = []
@@ -253,9 +210,9 @@ with TCLab() as lab:
 
     start_time = 0
     prev_time = 0
+    interval = 3600  # Define the interval for saving and restarting
 
     for i, t in enumerate(tclab.clock(loops)):
-        itrator= i
         tm[i] = t
         dt = t - prev_time
 
@@ -264,7 +221,7 @@ with TCLab() as lab:
 
         # Run LSTM model to get Q1 value for control
         if i >= window:
-            # Load data for model
+            # Load data for the model
             T1_m = T1[i - window:i]
             Tsp_m = Tsp[i - window:i]
             # Predict and store LSTM value for comparison
@@ -277,12 +234,11 @@ with TCLab() as lab:
         # Write heater output (0-100)
         print(manual_flag)
 
-        #setting changing values in GUI
-        crr_lstm_label.config(text=f"Current LSTM Q= {crr_LSTM_Q}") 
-        crr_man_label.config(text=f"Current Manual Q= {manual_val}") 
-        crr_tem_label.config(text=f"Current PV= {crr_tem}") 
-        crr_tsp_label.config(text=f"Current Tsp= {crr_tsp}") 
-
+        # setting changing values in GUI
+        crr_lstm_label.config(text=f"Current LSTM Q= {crr_LSTM_Q}")
+        crr_man_label.config(text=f"Current Manual Q= {manual_val}")
+        crr_tem_label.config(text=f"Current PV= {crr_tem}")
+        crr_tsp_label.config(text=f"Current Tsp= {crr_tsp}")
 
         if manual_flag == True:
             lab.Q1(manual_val)
@@ -295,7 +251,6 @@ with TCLab() as lab:
         i_values.append(i)
         Tsp_values.append(Tsp[i])
         T1_values.append(T1[i])
-        
 
         # Update plot lines
         line_sp.set_data(i_values, Tsp_values)
@@ -308,8 +263,8 @@ with TCLab() as lab:
 
         prev_time = t
 
-        if i % 200 == 0 and i != 0:
-            # Save data every 3600 loops
+        if i % interval == 0 and i != 0:
+            # Save data every 'interval' loops
             save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values)
 
             # Clear the lists to free up memory
@@ -318,28 +273,7 @@ with TCLab() as lab:
             T1_values.clear()
             Qlstm_values.clear()
 
-
 # Turn off interactive mode after the loop
 plt.ioff()
 plt.show()
-
-
-# data = {
-#     'i_values': i_values,
-#     'Tsp_values': Tsp_values,
-#     'T1_values': T1_values,
-#     'Qlstm_values': Qlstm_values
-# }
-
-# df = pd.DataFrame(data)
-
-# # Define the CSV file name
-# csv_file = "output.csv"
-
-# # Save the DataFrame to a CSV file
-# df.to_csv(csv_file, index=False)
-
-# print(f"Data has been saved to {csv_file}")
-
-
 
