@@ -9,6 +9,8 @@ import time
 from tqdm import tqdm # Progress bar
 import gc
 # for scaling
+import datetime
+import matplotlib.dates as mdates
 
 # For scaling, feature selection
 from sklearn.preprocessing import MinMaxScaler
@@ -54,6 +56,8 @@ window = 15
 
 # Show the model architecture
 # print(new_model.summary())
+
+
 
 
 # LSTM controller code
@@ -151,6 +155,8 @@ crr_LSTM_Q = 0
 crr_tem = 0
 crr_tsp = 0
 
+
+
 def mann_update():
     global manual_flag
     global manual_val
@@ -226,9 +232,10 @@ crr_tsp_label = tk.Label(root, text=f"y = {crr_tsp}")
 crr_tsp_label.grid(row=10, column=0)
 
 # Create a figure and axes for the real-time plot
+plt.ion()  
 fig, ax = plt.subplots(figsize=(10, 4))
 ax.set_ylim((0, 100))
-ax.set_xlabel('Time (s)', size=14)
+ax.set_xlabel('Time (hh:mm:ss)', size=14)
 ax.tick_params(axis='both', which='both', labelsize=12)
 
 # Initialize data arrays for real-time plot
@@ -236,6 +243,7 @@ i_values = []
 Tsp_values = []
 T1_values = []
 Qlstm_values = []
+time_val=[]
 
 # Create empty lines for the plot
 line_sp, = ax.plot([], 'k-', label='SP $(^oC)$')
@@ -294,7 +302,9 @@ with TCLab() as lab:
             Qlstm_values.append(Qlstm[i])
 
         # Update plot data
-        i_values.append(i)
+        current_datetime = datetime.datetime.now()
+        formatted_time = current_datetime.strftime("%H:%M:%S")
+        i_values.append(datetime.datetime.strptime(formatted_time, "%H:%M:%S"))
         Tsp_values.append(Tsp[i])
         T1_values.append(T1[i])
         
@@ -304,13 +314,19 @@ with TCLab() as lab:
         line_t1.set_data(i_values, T1_values)
         line_lstm.set_data(i_values, Qlstm_values)
 
+        date_format = mdates.DateFormatter('%H:%M:%S')
+        ax.xaxis.set_major_formatter(date_format)
+
+        # Rotate the x-axis labels for better readability (optional)
+        plt.xticks(rotation=40)
+
         ax.relim()
         ax.autoscale_view()
         fig.canvas.flush_events()  # Update the plot
 
         prev_time = t
 
-        if i % 3600 == 0 and i != 0:
+        if i % 150 == 0 and i != 0:
             # Save data every 3600 loops
             save_data_to_csv(i, i_values, Tsp_values, T1_values, Qlstm_values)
 
