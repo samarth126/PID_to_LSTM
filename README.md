@@ -26,7 +26,7 @@ It is based on a research paper and demonstrates how **deep learning** can augme
 ### ✅ Step 1 — Clone the Repository
 ```bash
 git clone https://github.com/samarth126/PID_to_LSTM.git
-cd <your-repo-folder>
+cd PID_to_LSTM
 ```
 ### ✅ Step 2 — Create a Virtual Environment 
 ```
