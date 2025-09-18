@@ -23,7 +23,29 @@ It is based on a research paper and demonstrates how **deep learning** can augme
 
 ## 🔧 Setup Instructions
 
-### 1. Clone the Repository
+### ✅ Step 1 — Clone the Repository
 ```bash
 git clone https://github.com/samarth126/PID_to_LSTM.git
-cd PID_to_LSTM
+cd <your-repo-folder>
+```
+### ✅ Step 2 — Create a Virtual Environment 
+```
+python3 -m venv .venv
+source .venv/bin/activate
+```
+### ✅ Step 3 — Upgrade Pip
+```
+pip install --upgrade pip
+```
+### ✅ Step 4 — Install Requirements
+```
+pip install -r requirements.txt
+```
+### ✅ Step 5 — (Optional) Train the Model
+```
+python main1.py
+```
+### ✅ Step 6 — Run the Inference GUI
+```
+python onepy.py
+```
